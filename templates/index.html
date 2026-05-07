@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resonance Engine</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --accent: #38bdf8;
+            --text-muted: #94a3b8;
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        textarea {
+            width: 100%;
+            max-width: 600px;
+            height: 120px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 16px;
+            resize: vertical;
+            display: block;
+            margin: 0 auto 20px auto;
+            transition: border-color 0.3s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        button {
+            display: block;
+            margin: 0 auto;
+            background: var(--accent);
+            color: #0f172a;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        button:hover { opacity: 0.9; }
+        
+        .status {
+            text-align: center;
+            color: var(--text-muted);
+            margin: 20px 0;
+            min-height: 24px;
+        }
+
+        /* Thesis Block Styling */
+        .thesis-block {
+            background: rgba(56, 189, 248, 0.05);
+            border-left: 3px solid var(--accent);
+            padding: 16px 20px;
+            margin: 20px auto 40px auto;
+            max-width: 700px;
+            text-align: left;
+            font-style: normal;
+            color: #e2e8f0;
+            border-radius: 0 8px 8px 0;
+            line-height: 1.6;
+            font-size: 16px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        .thesis-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent);
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        /* Pinterest Masonry Layout */
+        .masonry-grid {
+            column-count: 3;
+            column-gap: 20px;
+        }
+        @media (max-width: 900px) { .masonry-grid { column-count: 2; } }
+        @media (max-width: 600px) { .masonry-grid { column-count: 1; } }
+
+        /* The Card - FIXED: proper containment */
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            break-inside: avoid;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            box-sizing: border-box;
+            overflow: hidden; /* Prevents any content from leaking out */
+        }
+        .card-header {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #334155;
+            flex-shrink: 0;
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0 0 5px 0;
+            line-height: 1.3;
+        }
+        .card-author {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin: 0;
+        }
+        .card-strength {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(56, 189, 248, 0.2);
+            color: var(--accent);
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* Swipeable Content Carousel - FIXED: no overlap */
+        .carousel {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: thin;
+            gap: 20px;
+            scroll-behavior: smooth;
+            width: 100%;
+            flex: 1 1 auto;
+            min-height: 0;
+            /* Critical fix: prevents carousel from overlapping with other elements */
+            position: relative;
+            clear: both;
+        }
+        
+        .carousel::-webkit-scrollbar {
+            height: 4px;
+            background: #334155;
+            border-radius: 4px;
+        }
+        .carousel::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 4px;
+        }
+        
+        .carousel-slide {
+            flex: 0 0 100%;
+            scroll-snap-align: start;
+            line-height: 1.6;
+            color: #cbd5e1;
+            font-size: 15px;
+            padding: 0;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;
+            box-sizing: border-box;
+            /* Critical fix: prevents slides from stacking/overlapping */
+            display: block;
+            width: 100%;
+        }
+
+        /* Carousel Indicators */
+        .swipe-hint {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 15px;
+            display: block;
+            flex-shrink: 0;
+        }
+
+        .read-btn {
+            display: inline-block;
+            margin-top: 15px;
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            flex-shrink: 0;
+            align-self: flex-start;
+        }
+        .read-btn:hover { text-decoration: underline; }
+
+        /* Ensure proper spacing and prevent any collapse */
+        .carousel-slide p {
+            margin: 0 0 0.75em 0;
+        }
+        .carousel-slide p:last-child {
+            margin-bottom: 0;
+        }
+        
+        /* Force proper break-inside for masonry */
+        .masonry-grid .card {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Resonance Engine</h1>
+        <p style="color: var(--text-muted)">Translating thought into geometry.</p>
+    </div>
+
+    <textarea id="userInput" placeholder="Paste your journal entry, thought, or systems problem here..."></textarea>
+    <button onclick="queryEngine()">Find Resonance</button>
+    
+    <div id="statusText" class="status"></div>
+
+    <div id="intentSection" style="display: none; margin-bottom: 60px;">
+        <h2 style="color: var(--accent); border-bottom: 1px solid #334155; padding-bottom: 10px;">Lens: Pure Intent</h2>
+        <div class="masonry-grid" id="intentGrid"></div>
+    </div>
+
+    <div id="rawSection" style="display: none;">
+        <h2 style="color: var(--text-muted); border-bottom: 1px solid #334155; padding-bottom: 10px;">Lens: Vibe & Style</h2>
+        <div class="masonry-grid" id="rawGrid"></div>
+    </div>
+</div>
+
+<script>
+    async function queryEngine() {
+        const text = document.getElementById('userInput').value;
+        if (!text.trim()) return;
+
+        const status = document.getElementById('statusText');
+        const intentGrid = document.getElementById('intentGrid');
+        const rawGrid = document.getElementById('rawGrid');
+        const intentSection = document.getElementById('intentSection');
+        const rawSection = document.getElementById('rawSection');
+        
+        status.innerHTML = "Extracting intent and calculating vectors...";
+        intentGrid.innerHTML = "";
+        rawGrid.innerHTML = "";
+        intentSection.style.display = "none";
+        rawSection.style.display = "none";
+
+        try {
+            const response = await fetch('/api/resonate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text })
+            });
+
+            const data = await response.json();
+            
+            // Render Status / Thesis
+            let statusHtml = '';
+            if (data.abstraction) {
+                statusHtml = `
+                <div class="thesis-block">
+                    <div class="thesis-label">Extracted Intent</div>
+                    ${data.abstraction}
+                </div>`;
+            } else {
+                statusHtml = `<div style="color: #ef4444; font-style: italic;">Network offline. Showing raw vibe matches only.</div>`;
+            }
+            status.innerHTML = statusHtml;
+
+            // Helper function to build cards - FIXED: proper slide generation without overlap
+            const buildCard = (match) => {
+                const paragraphs = match.content.split(/\n\s*\n/).filter(p => p.trim() !== '');
+                let slidesHtml = '';
+                
+                if (paragraphs.length === 1 && match.content.length > 500) {
+                    const sentences = match.content.match(/[^.!?]+[.!?]+/g) || [match.content];
+                    let currentSlide = "";
+                    sentences.forEach(sentence => {
+                        if (currentSlide.length + sentence.length > 400) {
+                            slidesHtml += `<div class="carousel-slide">${currentSlide.trim()}</div>`;
+                            currentSlide = sentence;
+                        } else {
+                            currentSlide += " " + sentence;
+                        }
+                    });
+                    if (currentSlide) slidesHtml += `<div class="carousel-slide">${currentSlide.trim()}</div>`;
+                } else {
+                    paragraphs.forEach(p => { 
+                        slidesHtml += `<div class="carousel-slide">${p}</div>`; 
+                    });
+                }
+                
+                // Fallback: ensure at least one slide exists
+                if (!slidesHtml) {
+                    slidesHtml = `<div class="carousel-slide">${match.content}</div>`;
+                }
+
+                const needsSwipe = (slidesHtml.match(/carousel-slide/g) || []).length > 1;
+                
+                return `
+                    <div class="card">
+                        <div class="card-strength">${match.strength}%</div>
+                        <div class="card-header">
+                            <h2 class="card-title">${match.title}</h2>
+                            <p class="card-author">${match.author}</p>
+                        </div>
+                        <div class="carousel">${slidesHtml}</div>
+                        ${needsSwipe ? '<div class="swipe-hint">← Swipe to read more →</div>' : ''}
+                        <a href="${match.link}" target="_blank" class="read-btn">Read Original →</a>
+                    </div>
+                `;
+            };
+
+            // Populate Intent Grid
+            if (data.intent_matches && data.intent_matches.length > 0) {
+                intentSection.style.display = "block";
+                data.intent_matches.forEach(match => {
+                    intentGrid.innerHTML += buildCard(match);
+                });
+            }
+
+            // Populate Raw Grid
+            if (data.raw_matches && data.raw_matches.length > 0) {
+                rawSection.style.display = "block";
+                data.raw_matches.forEach(match => {
+                    rawGrid.innerHTML += buildCard(match);
+                });
+            }
+
+        } catch (error) {
+            status.innerHTML = `<div style="color: #ef4444;">Error connecting to the Resonance Engine.</div>`;
+            console.error(error);
+        }
+    }
+</script>
+
+</body>
+</html>
