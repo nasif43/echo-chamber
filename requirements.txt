@@ -1,0 +1,7 @@
+flask
+gunicorn
+groq
+python-dotenv
+sentence-transformers
+sqlite-vec
+requests

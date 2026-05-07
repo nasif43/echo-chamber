@@ -68,9 +68,24 @@ def format_matches(results):
     for essay_id, title, author, content, distance in results:
         strength = max(0, 100 - (distance * 100))
         
-        # Determine the Read Link
+        # Determine the Read Link - use source_url from manifest
         book_info = manifest_data.get(essay_id, {})
-        read_link = book_info.get('url', f"/read/{essay_id}") 
+        source_url = book_info.get('source_url', '')
+        
+        # Convert text file URL to main book page URL for better UX
+        # e.g., https://www.gutenberg.org/ebooks/1513.txt.utf-8 -> https://www.gutenberg.org/ebooks/1513
+        if source_url:
+            # Extract book ID from URL (everything after /ebooks/ that's a number)
+            import re
+            match = re.search(r'/ebooks/(\d+)', source_url)
+            if match:
+                book_id = match.group(1)
+                read_link = f"https://www.gutenberg.org/ebooks/{book_id}"
+            else:
+                # Fallback: use the source_url as-is if we can't extract ID
+                read_link = source_url
+        else:
+            read_link = "#"  # No link available
         
         formatted.append({
             "title": title,
@@ -111,68 +126,7 @@ def resonate():
         "intent_matches": formatted_intent,
         "raw_matches": formatted_raw
     })
-@app.route('/read/<essay_id>')
-def read_book(essay_id):
-    # Sanitize the input to prevent directory traversal
-    safe_id = os.path.basename(essay_id)
-    
-    # Check for the file (handling whether essay_id includes .txt or not)
-    filepath = os.path.join('corpus', 'clean', f"{safe_id}.txt")
-    if not os.path.exists(filepath):
-        filepath = os.path.join('corpus', 'clean', safe_id)
-        if not os.path.exists(filepath):
-            return "Book not found in corpus.", 404
-            
-    with open(filepath, 'r', encoding='utf-8') as f:
-        content = f.read()
 
-    # Serve it in a clean, dark-mode reading view that matches your UI
-    html = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Reading: {safe_id}</title>
-        <style>
-            body {{
-                background-color: #0f172a;
-                color: #e2e8f0;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-                line-height: 1.8;
-                padding: 40px 20px;
-                margin: 0;
-            }}
-            .reader-container {{
-                max-width: 800px;
-                margin: 0 auto;
-                background: #1e293b;
-                padding: 40px 60px;
-                border-radius: 16px;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            }}
-            .back-btn {{
-                color: #38bdf8;
-                text-decoration: none;
-                font-weight: bold;
-                display: inline-block;
-                margin-bottom: 30px;
-            }}
-            .back-btn:hover {{ text-decoration: underline; }}
-            pre {{
-                white-space: pre-wrap;
-                font-family: inherit;
-                font-size: 16px;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="reader-container">
-            <a href="/" class="back-btn">&larr; Back to Resonance Engine</a>
-            <pre>{content}</pre>
-        </div>
-    </body>
-    </html>
-    """
-    return html
 if __name__ == '__main__':
+    # Development only - production uses gunicorn
     app.run(debug=True, port=5000)

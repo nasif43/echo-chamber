@@ -1,6 +1,7 @@
 import sqlite3
 import sqlite_vec
 import struct
+import threading
 from sentence_transformers import SentenceTransformer
 
 class ResonanceEngine:
@@ -10,6 +11,7 @@ class ResonanceEngine:
         print(f"[Core] Waking up the local model ({self.model_name})...")
         # Loads into RAM once upon initialization
         self.model = SentenceTransformer(self.model_name)
+        self._lock = threading.Lock()  # Thread safety for model.encode()
 
     def _serialize_vector(self, vector):
         return struct.pack(f"{len(vector)}f", *vector)
@@ -22,7 +24,8 @@ class ResonanceEngine:
         else:
             query_text = text
 
-        query_vector = self.model.encode(query_text)
+        with self._lock:
+            query_vector = self.model.encode(query_text)
         query_bytes = self._serialize_vector(query_vector)
 
         db = sqlite3.connect(self.db_file)
